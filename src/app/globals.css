@@ -1,16 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  --background: #121210;
+  --background: #080808;
   --foreground: #ece8e3;
-  --card-bg: #1e1d1a;
+  --card-bg: #141412;
   --accent-gold: #c8aa6e;
-  --tier-s: #ff7f7f;
-  --tier-a: #ffbf7f;
-  --tier-b: #ffff7f;
-  --tier-c: #7fff7f;
-  --tier-d: #7fbfff;
-  --tier-f: #bf7fff;
+  --accent-gold-glow: rgba(200, 170, 110, 0.3);
+
+  /* Tier Colors (More muted/metallic) */
+  --tier-s: #ff6b6b;
+  --tier-a: #ffaa5f;
+  --tier-b: #ffe66d;
+  --tier-c: #6dff86;
+  --tier-d: #6dcbff;
+  --tier-f: #b66dff;
 }
 
 @theme inline {
@@ -18,10 +21,24 @@
   --color-foreground: var(--foreground);
   --color-card: var(--card-bg);
   --color-gold: var(--accent-gold);
+  --font-inter: var(--font-inter);
+  --font-cinzel: var(--font-cinzel);
+  --font-forevs: var(--font-forevs);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans, system-ui, sans-serif);
+  font-family: var(--font-inter, sans-serif);
+}
+
+h1,
+h2,
+h3,
+.font-cinzel {
+  font-family: var(--font-cinzel, serif);
+}
+
+.font-forevs {
+  font-family: var(--font-forevs, sans-serif);
 }

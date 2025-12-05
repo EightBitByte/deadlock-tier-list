@@ -1,5 +1,6 @@
 import React from 'react';
 import { CharacterCard } from './CharacterCard';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Character {
   id: number;
@@ -19,18 +20,37 @@ interface TierRowProps {
 
 export const TierRow: React.FC<TierRowProps> = ({ tier, characters, color, onCharacterClick }) => {
   return (
-    <div className="flex w-full mb-4 bg-white/5 rounded-lg overflow-hidden min-h-[100px]">
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.5 }}
+      className="flex w-full mb-6 bg-black/40 backdrop-blur-sm rounded-r-xl overflow-hidden border-l-4 min-h-[140px] shadow-lg relative"
+      style={{ borderColor: color }}
+    >
+      {/* Tier Label */}
       <div
-        className="w-24 flex items-center justify-center text-4xl font-black text-black shrink-0"
-        style={{ backgroundColor: color }}
+        className="w-24 group flex items-center justify-center relative shrink-0 overflow-hidden"
       >
-        {tier}
+        <div className="absolute inset-0 opacity-20" style={{ backgroundColor: color }} />
+        <span className="text-5xl font-black font-cinzel text-white drop-shadow-md z-10" style={{ textShadow: `0 0 20px ${color}` }}>
+          {tier}
+        </span>
       </div>
-      <div className="flex flex-wrap p-2 w-full bg-black/20">
-        {characters.map(char => (
-          <CharacterCard key={char.id} character={char} onClick={() => onCharacterClick(char)} />
-        ))}
+
+      {/* Content */}
+      <div className="flex flex-wrap p-2 w-full items-center content-start">
+        <AnimatePresence>
+          {characters.map(char => (
+            <CharacterCard key={char.id} character={char} onClick={() => onCharacterClick(char)} />
+          ))}
+        </AnimatePresence>
+
+        {characters.length === 0 && (
+          <div className="w-full h-full flex items-center justify-center opacity-10 text-sm italic font-cinzel">
+            No Heroes
+          </div>
+        )}
       </div>
-    </div>
+    </motion.div>
   );
 };

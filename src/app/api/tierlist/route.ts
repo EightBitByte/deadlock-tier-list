@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/db';
-import { characters, votes } from '@/db/schema';
-import { sql, eq } from 'drizzle-orm';
+import { db } from '../../../db';
+import { characters, votes } from '../../../db/schema';
+import { sql } from 'drizzle-orm';
+import { getPatches } from '../../../lib/patches';
 
 const TIER_VALUES: Record<string, number> = {
   S: 6,
@@ -21,37 +22,30 @@ const VALUE_TO_TIER: Record<number, string> = {
   1: 'F',
 };
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    // We want all characters, and their average tier score.
-    // Since 'tier' is text in DB, we handle conversion carefully or just fetch raw counts.
-    // For MVP/simplicity with Drizzle (and avoiding complex SQL CASE maps right now), 
-    // let's fetch characters and aggregated vote counts, then compute average in JS.
-    // This is performant enough for < 100 characters.
+    const { searchParams } = new URL(request.url);
+    const requestedPatch = searchParams.get('patch');
+
+    // Fetch all patches from upstream
+    const allPatches = await getPatches();
+    const latestPatch = allPatches.length > 0 ? allPatches[0].toString() : 'unknown';
+
+    // Determine which patch to view: requested -> latest -> 'unknown'
+    const targetPatch = requestedPatch || latestPatch;
 
     const allCharacters = await db.select().from(characters);
 
-    // Fetch all votes. For a large app, we'd aggregate in SQL.
-    // For now, let's try to aggregate in SQL using raw SQL if possible, or just fetch all.
-    // Let's fetch all votes for now? No, that scales poorly.
-    // Let's use sql template for aggregation.
-
-    /*
-      SELECT character_id, tier, count(*) 
-      FROM votes 
-      GROUP BY character_id, tier
-    */
-
+    // Filter votes by the target patch
     const voteCounts = await db.execute(sql`
       SELECT ${votes.characterId} as character_id, ${votes.tier} as tier, count(*) as count
       FROM ${votes}
+      WHERE ${votes.patch} = ${targetPatch}
       GROUP BY ${votes.characterId}, ${votes.tier}
     `);
 
-    // Process in memory
     const charStats: Record<number, { totalScore: number; totalVotes: number }> = {};
 
-    // Initialize
     for (const char of allCharacters) {
       charStats[char.id] = { totalScore: 0, totalVotes: 0 };
     }
@@ -67,15 +61,13 @@ export async function GET() {
       }
     }
 
-    const result = allCharacters.map(char => {
+    const tierList = allCharacters.map(char => {
       const stats = charStats[char.id];
-      let averageTier = 'C'; // Default to middle if no votes? Or separate "Unranked"?
+      let averageTier = 'N/A';
 
       if (stats.totalVotes > 0) {
         const avgScore = Math.round(stats.totalScore / stats.totalVotes);
         averageTier = VALUE_TO_TIER[avgScore] || 'C';
-      } else {
-        averageTier = 'N/A';
       }
 
       return {
@@ -85,7 +77,16 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json(result);
+    return NextResponse.json({
+      tierList,
+      metadata: {
+        currentPatch: targetPatch,
+        latestPatch,
+        allPatches,
+        isLatest: targetPatch === latestPatch
+      }
+    });
+
   } catch (error) {
     console.error('Error fetching tierlist:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

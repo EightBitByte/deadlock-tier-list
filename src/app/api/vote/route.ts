@@ -1,53 +1,33 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/db';
-import { votes } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { db } from '../../../db';
+import { votes } from '../../../db/schema';
+import { getLatestPatch } from '../../../lib/patches';
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { characterId, tier, sessionId } = body;
+    const { characterId, tier, sessionId } = await request.json();
 
     if (!characterId || !tier || !sessionId) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing Required Fields' }, { status: 400 });
     }
 
-    // Validate tier
-    const validTiers = ['S', 'A', 'B', 'C', 'D', 'F'];
-    if (!validTiers.includes(tier)) {
-      return NextResponse.json({ error: 'Invalid tier' }, { status: 400 });
-    }
+    const latestPatch = await getLatestPatch();
 
-    // Check if user already voted for this character
-    // We update the existing vote if they voted again
-    // Ideally we might keep history, but for a tierlist "snapshot" behavior is better.
-
-    // Upsert logic:
-    // Check exist
-    const existingVote = await db.select()
-      .from(votes)
-      .where(and(
-        eq(votes.characterId, characterId),
-        eq(votes.sessionId, sessionId)
-      ))
-      .limit(1);
-
-    if (existingVote.length > 0) {
-      // Update
-      await db.update(votes)
-        .set({ tier, createdAt: new Date() })
-        .where(eq(votes.id, existingVote[0].id));
-    } else {
-      // Insert
-      await db.insert(votes).values({
+    // Upsert vote for this session + character + patch
+    // We assume the schema has a unique constraint on (characterId, sessionId, patch)
+    await db.insert(votes)
+      .values({
         characterId,
         tier,
         sessionId,
+        patch: latestPatch,
+      })
+      .onConflictDoUpdate({
+        target: [votes.characterId, votes.sessionId, votes.patch],
+        set: { tier, createdAt: new Date() },
       });
-    }
 
-    return NextResponse.json({ success: true });
-
+    return NextResponse.json({ success: true, patch: latestPatch });
   } catch (error) {
     console.error('Error submitting vote:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
