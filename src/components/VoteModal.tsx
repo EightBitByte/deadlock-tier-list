@@ -1,10 +1,14 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import soundMapRaw from '../lib/sound-map.json';
+
+const soundMap = soundMapRaw as Record<string, { happy: string[], sad: string[] }>;
 
 interface Character {
   id: number;
   name: string;
   imageUrl: string;
+  averageTier: string;
 }
 
 interface VoteModalProps {
@@ -14,15 +18,57 @@ interface VoteModalProps {
 }
 
 const TIERS = [
-  { name: 'S', color: 'var(--tier-s)' },
-  { name: 'A', color: 'var(--tier-a)' },
-  { name: 'B', color: 'var(--tier-b)' },
-  { name: 'C', color: 'var(--tier-c)' },
-  { name: 'D', color: 'var(--tier-d)' },
-  { name: 'F', color: 'var(--tier-f)' },
+  { name: 'S', color: 'var(--tier-s)', value: 6 },
+  { name: 'A', color: 'var(--tier-a)', value: 5 },
+  { name: 'B', color: 'var(--tier-b)', value: 4 },
+  { name: 'C', color: 'var(--tier-c)', value: 3 },
+  { name: 'D', color: 'var(--tier-d)', value: 2 },
+  { name: 'F', color: 'var(--tier-f)', value: 1 },
 ];
 
+const getTierValue = (tier: string) => {
+  const t = TIERS.find(t => t.name === tier);
+  return t ? t.value : 0;
+};
+
 export const VoteModal: React.FC<VoteModalProps> = ({ character, onClose, onVote }) => {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  /* 
+   * We refrain from stopping audio on unmount per user request.
+   * This allows the "Happy/Sad" line to finish even if the user closes the modal quickly.
+   */
+  useEffect(() => {
+    // No cleanup needed
+  }, []);
+
+  const handleVote = (tier: string) => {
+    const votedValue = getTierValue(tier);
+    const avgValue = getTierValue(character.averageTier);
+
+    // If voting higher or equal to average -> Happy
+    // If voting lower -> Sad
+    const isHappy = votedValue >= avgValue;
+    const type = isHappy ? 'happy' : 'sad';
+
+    const sounds = soundMap[character.name];
+    if (sounds && sounds[type] && sounds[type].length > 0) {
+      // Stop previous sound
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+
+      const randomSound = sounds[type][Math.floor(Math.random() * sounds[type].length)];
+      const audio = new Audio(randomSound);
+      audio.volume = 0.4; // Slightly lower volume
+      audioRef.current = audio;
+      audio.play().catch(e => console.error("Audio play failed", e));
+    }
+
+    onVote(tier);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={onClose}>
       <motion.div
@@ -40,9 +86,9 @@ export const VoteModal: React.FC<VoteModalProps> = ({ character, onClose, onVote
         <div className="flex flex-col items-center mb-8 relative z-10">
           <h2 className="text-2xl font-bold mb-4 text-gold font-cinzel">Vote for {character.name}</h2>
           <div className="w-32 h-32 rounded-lg overflow-hidden border-2 border-white/20 shadow-2xl">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={character.imageUrl} alt={character.name} className="w-full h-full object-cover" />
           </div>
+          <p className="mt-2 text-white/50 text-sm">Current: <span className="text-gold font-bold">{character.averageTier}</span></p>
         </div>
 
         <div className="grid grid-cols-3 gap-3 relative z-10">
@@ -51,7 +97,7 @@ export const VoteModal: React.FC<VoteModalProps> = ({ character, onClose, onVote
               key={tier.name}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => onVote(tier.name)}
+              onClick={() => handleVote(tier.name)}
               className="py-4 font-black text-xl text-black rounded-lg hover:brightness-110 shadow-lg font-cinzel relative overflow-hidden group"
               style={{ backgroundColor: tier.color }}
             >
