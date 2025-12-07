@@ -1,16 +1,14 @@
 import React from 'react';
 import TierList from '@/components/TierList';
+import { getTierListData } from '@/lib/tierlist-data';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
   // On server side, we don't have session ID yet, so initial load won't show user votes
   // The client-side useEffect in TierList will fetch with session ID if needed.
-  const res = await fetch('http://localhost:3000/api/tierlist', { cache: 'no-store' });
-  if (!res.ok) {
-    throw new Error('Failed to fetch data');
-  }
-  const { tierList, metadata } = await res.json();
+  // Direct DB call to avoid "fetch failed" with ECONNREFUSED in Docker
+  const { tierList, metadata } = await getTierListData();
 
   return (
     <main className="min-h-screen py-12">
