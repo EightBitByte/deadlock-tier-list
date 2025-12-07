@@ -61,6 +61,22 @@ export async function GET(request: Request) {
       }
     }
 
+    // Fetch user's votes if sessionId is provided
+    const sessionId = searchParams.get('sessionId');
+    const userVotesMap: Record<number, string> = {};
+
+    if (sessionId) {
+      const userVotes = await db.execute(sql`
+        SELECT ${votes.characterId} as character_id, ${votes.tier} as tier
+        FROM ${votes}
+        WHERE ${votes.sessionId} = ${sessionId} AND ${votes.patch} = ${targetPatch}
+      `);
+
+      for (const row of userVotes) {
+        userVotesMap[row.character_id as number] = row.tier as string;
+      }
+    }
+
     const tierList = allCharacters.map(char => {
       const stats = charStats[char.id];
       let averageTier = 'N/A';
@@ -73,7 +89,8 @@ export async function GET(request: Request) {
       return {
         ...char,
         averageTier,
-        totalVotes: stats.totalVotes
+        totalVotes: stats.totalVotes,
+        userVote: userVotesMap[char.id] || null
       };
     });
 

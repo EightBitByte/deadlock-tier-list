@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import soundMapRaw from '../lib/sound-map.json';
 
 const soundMap = soundMapRaw as Record<string, { happy: string[], sad: string[] }>;
@@ -9,10 +10,12 @@ interface Character {
   name: string;
   imageUrl: string;
   averageTier: string;
+  userVote?: string | null;
 }
 
 interface VoteModalProps {
   character: Character;
+  isMuted?: boolean;
   onClose: () => void;
   onVote: (tier: string) => void;
 }
@@ -26,21 +29,19 @@ const TIERS = [
   { name: 'F', color: 'var(--tier-f)', value: 1 },
 ];
 
+// Global variable to track currently playing audio across modal instances
+let currentAudio: HTMLAudioElement | null = null;
+
 const getTierValue = (tier: string) => {
   const t = TIERS.find(t => t.name === tier);
   return t ? t.value : 0;
 };
 
-export const VoteModal: React.FC<VoteModalProps> = ({ character, onClose, onVote }) => {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
+export const VoteModal: React.FC<VoteModalProps> = ({ character, isMuted = false, onClose, onVote }) => {
   /* 
-   * We refrain from stopping audio on unmount per user request.
-   * This allows the "Happy/Sad" line to finish even if the user closes the modal quickly.
+   * Global `currentAudio` handles cleanup/interruptions across modal re-mounts.
+   * No local ref needed for audio tracking.
    */
-  useEffect(() => {
-    // No cleanup needed
-  }, []);
 
   const handleVote = (tier: string) => {
     const votedValue = getTierValue(tier);
@@ -52,17 +53,18 @@ export const VoteModal: React.FC<VoteModalProps> = ({ character, onClose, onVote
     const type = isHappy ? 'happy' : 'sad';
 
     const sounds = soundMap[character.name];
-    if (sounds && sounds[type] && sounds[type].length > 0) {
-      // Stop previous sound
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
+    if (!isMuted && sounds && sounds[type] && sounds[type].length > 0) {
+      // Stop previous sound (global)
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
       }
 
       const randomSound = sounds[type][Math.floor(Math.random() * sounds[type].length)];
       const audio = new Audio(randomSound);
       audio.volume = 0.4; // Slightly lower volume
-      audioRef.current = audio;
+
+      currentAudio = audio;
       audio.play().catch(e => console.error("Audio play failed", e));
     }
 
@@ -70,23 +72,28 @@ export const VoteModal: React.FC<VoteModalProps> = ({ character, onClose, onVote
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80" onClick={onClose}>
       <motion.div
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9 }}
-        className="bg-card border border-white/10 p-8 rounded-2xl max-w-sm w-full mx-4 relative shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden"
+        className="bg-card border border-white/10 p-8 rounded-2xl max-w-sm w-full mx-4 relative shadow-xl overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
-        {/* Glow effect */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-gold/10 blur-[50px] rounded-full pointer-events-none" />
+        {/* Optimized: Removed expensive blur glow */}
 
         <button className="absolute top-4 right-4 text-white/50 hover:text-white transition-colors" onClick={onClose}>✕</button>
 
         <div className="flex flex-col items-center mb-8 relative z-10">
           <h2 className="text-2xl font-bold mb-4 text-gold font-cinzel">Vote for {character.name}</h2>
-          <div className="w-32 h-32 rounded-lg overflow-hidden border-2 border-white/20 shadow-2xl">
-            <img src={character.imageUrl} alt={character.name} className="w-full h-full object-cover" />
+          <div className="w-32 h-32 rounded-lg overflow-hidden border-2 border-white/20 shadow-2xl relative">
+            <Image
+              src={character.imageUrl}
+              alt={character.name}
+              fill
+              className="object-cover"
+              sizes="128px"
+            />
           </div>
           <p className="mt-2 text-white/50 text-sm">Current: <span className="text-gold font-bold">{character.averageTier}</span></p>
         </div>
@@ -98,7 +105,7 @@ export const VoteModal: React.FC<VoteModalProps> = ({ character, onClose, onVote
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => handleVote(tier.name)}
-              className="py-4 font-black text-xl text-black rounded-lg hover:brightness-110 shadow-lg font-cinzel relative overflow-hidden group"
+              className={`py-4 font-black text-xl text-black rounded-lg hover:brightness-110 shadow-lg font-cinzel relative overflow-hidden group ${character.userVote === tier.name ? 'ring-4 ring-white ring-offset-2 ring-offset-black' : ''}`}
               style={{ backgroundColor: tier.color }}
             >
               <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />

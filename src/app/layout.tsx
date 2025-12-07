@@ -37,9 +37,6 @@ export default function RootLayout({
         <div className="fixed inset-0 pointer-events-none z-0 opacity-[0.03] mix-blend-overlay"
           style={{ backgroundImage: `url("https://grainy-gradients.vercel.app/noise.svg")` }}
         />
-        {/* Fog Blob */}
-        <div className="fixed -top-[20%] -left-[10%] w-[50%] h-[50%] bg-purple-900/20 blur-[120px] rounded-full pointer-events-none z-[-1]" />
-        <div className="fixed top-[40%] -right-[10%] w-[40%] h-[60%] bg-amber-900/10 blur-[100px] rounded-full pointer-events-none z-[-1]" />
 
         <div className="relative z-10 min-h-screen flex flex-col">
           <div className="flex-grow">

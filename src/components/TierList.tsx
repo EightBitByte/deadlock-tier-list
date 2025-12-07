@@ -1,9 +1,10 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { TierRow } from './TierRow';
 import { VoteModal } from './VoteModal';
 import { PatchSelector } from './PatchSelector';
 import { motion } from 'framer-motion';
+import { Volume2, VolumeX } from 'lucide-react';
 
 interface Character {
   id: number;
@@ -12,6 +13,7 @@ interface Character {
   imageUrl: string;
   averageTier: string;
   totalVotes: number;
+  userVote?: string | null;
 }
 
 interface MetaData {
@@ -35,19 +37,40 @@ export default function TierList({ initialData, initialMeta }: { initialData: Ch
   const [meta, setMeta] = useState<MetaData>(initialMeta);
   const [selectedChar, setSelectedChar] = useState<Character | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
 
   // Generate a session ID if not present
   useEffect(() => {
     if (!localStorage.getItem('deadlock_session')) {
       localStorage.setItem('deadlock_session', Math.random().toString(36).substring(2));
     }
+    // Refetch to get user votes since server-side render doesn't have session
+    fetchData(meta.currentPatch);
   }, []);
+
+  // Load mute preference
+  useEffect(() => {
+    const savedMute = localStorage.getItem('deadlock_muted');
+    if (savedMute) {
+      setIsMuted(savedMute === 'true');
+    }
+  }, []);
+
+  const toggleMute = () => {
+    const newState = !isMuted;
+    setIsMuted(newState);
+    localStorage.setItem('deadlock_muted', String(newState));
+  };
 
   const fetchData = async (patch?: string) => {
     setIsLoading(true);
     try {
-      const query = patch ? `?patch=${patch}` : '';
-      const res = await fetch(`/api/tierlist${query}`);
+      const sessionId = localStorage.getItem('deadlock_session');
+      const queryParams = new URLSearchParams();
+      if (patch) queryParams.set('patch', patch);
+      if (sessionId) queryParams.set('sessionId', sessionId);
+
+      const res = await fetch(`/api/tierlist?${queryParams.toString()}`);
       const data = await res.json();
       setCharacters(data.tierList);
       setMeta(data.metadata);
@@ -83,6 +106,17 @@ export default function TierList({ initialData, initialMeta }: { initialData: Ch
         </h1>
 
         <div className="flex items-center gap-4">
+          <button
+            onClick={toggleMute}
+            className="w-10 h-10 flex items-center justify-center rounded-lg bg-black/40 border border-white/10 hover:bg-white/10 hover:border-gold/50 transition-colors text-gold"
+            title={isMuted ? "Unmute" : "Mute"}
+          >
+            {isMuted ? (
+              <VolumeX className="w-5 h-5" />
+            ) : (
+              <Volume2 className="w-5 h-5" />
+            )}
+          </button>
           <PatchSelector
             currentPatch={meta.currentPatch}
             latestPatch={meta.latestPatch}
@@ -99,9 +133,11 @@ export default function TierList({ initialData, initialMeta }: { initialData: Ch
         </div>
       )}
 
-      <motion.div layout className={`space-y-4 ${isLoading ? 'opacity-50' : ''} transition-opacity duration-300`}>
+      <motion.div className={`space-y-4 ${isLoading ? 'opacity-50' : ''} transition-opacity duration-300`}>
         {TIERS.map(tier => {
-          const tierChars = characters.filter(c => c.averageTier === tier.name);
+          // Memoize filtering so rows don't re-render on modal open (selectedChar change)
+          const tierChars = useMemo(() => characters.filter(c => c.averageTier === tier.name), [characters, tier.name]);
+
           return (
             <TierRow
               key={tier.name}
@@ -125,6 +161,7 @@ export default function TierList({ initialData, initialMeta }: { initialData: Ch
       {selectedChar && (
         <VoteModal
           character={selectedChar}
+          isMuted={isMuted}
           onClose={() => setSelectedChar(null)}
           onVote={handleVote}
         />

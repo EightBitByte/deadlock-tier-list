@@ -23,10 +23,18 @@ export default async function Home() {
   // Let's check the original file content again.
   // Ah, the file view showed:
   /*
-  export default async function Home() {
+  export default async function getData() {
+  // On server side, we don't have session ID yet, so initial load won't show user votes
+  // The client-side useEffect in TierList will fetch with session ID if needed, 
+  // or we can rely on the first user interaction/vote to refresh. 
+  // Actually, to show votes immediately, TierList needs to re-fetch on mount.
   const res = await fetch('http://localhost:3000/api/tierlist', { cache: 'no-store' });
-  const data = await res.json();
-  ...
+  if (!res.ok) {
+    throw new Error('Failed to fetch data');
+  }
+ 
+  return res.json();
+}  ...
   */
   // So I can just update that.
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { CharacterCard } from './CharacterCard';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 interface Character {
   id: number;
@@ -9,6 +9,7 @@ interface Character {
   imageUrl: string;
   averageTier: string;
   totalVotes: number;
+  userVote?: string | null;
 }
 
 interface TierRowProps {
@@ -18,13 +19,14 @@ interface TierRowProps {
   onCharacterClick: (char: Character) => void;
 }
 
-export const TierRow: React.FC<TierRowProps> = ({ tier, characters, color, onCharacterClick }) => {
+const TierRowComponent: React.FC<TierRowProps> = ({ tier, characters, color, onCharacterClick }) => {
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.5 }}
-      className="flex w-full mb-6 bg-black/40 backdrop-blur-sm rounded-r-xl overflow-hidden border-l-4 min-h-[140px] shadow-lg relative"
+      /* Optimized: Removed backdrop-blur-sm, increased opacity of bg-black */
+      className="flex w-full mb-6 bg-black/60 rounded-r-xl overflow-hidden border-l-4 min-h-[140px] shadow-lg relative"
       style={{ borderColor: color }}
     >
       {/* Tier Label */}
@@ -39,11 +41,9 @@ export const TierRow: React.FC<TierRowProps> = ({ tier, characters, color, onCha
 
       {/* Content */}
       <div className="flex flex-wrap p-2 w-full items-center content-start">
-        <AnimatePresence>
-          {characters.map(char => (
-            <CharacterCard key={char.id} character={char} onClick={() => onCharacterClick(char)} />
-          ))}
-        </AnimatePresence>
+        {characters.map(char => (
+          <CharacterCard key={char.id} character={char} onClick={() => onCharacterClick(char)} />
+        ))}
 
         {characters.length === 0 && (
           <div className="w-full h-full flex items-center justify-center opacity-10 text-sm italic font-cinzel">
@@ -54,3 +54,5 @@ export const TierRow: React.FC<TierRowProps> = ({ tier, characters, color, onCha
     </motion.div>
   );
 };
+
+export const TierRow = React.memo(TierRowComponent);
