@@ -12,5 +12,18 @@ services:
     volumes:
       - deadlock_pg_data:/var/lib/postgresql/data
 
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: deadlock_app
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgres://postgres:postgrespassword@db:5432/deadlock_tierlist
+    depends_on:
+      - db
+    restart: always
+
 volumes:
   deadlock_pg_data:
