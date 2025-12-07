@@ -13,9 +13,12 @@ services:
       - deadlock_pg_data:/var/lib/postgresql/data
 
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    
+    # Replace [YOUR_DOCKER_USER] with your actual username
+    image: [YOUR_DOCKER_USER]/deadlock-tierlist:latest
     container_name: deadlock_app
     ports:
       - "3000:3000"
