@@ -96,7 +96,7 @@ export const VoteModal: React.FC<VoteModalProps> = ({ character, isMuted = false
                   alt={character.name}
                   fill
                   unoptimized
-                  className="object-contain drop-shadow-[0_0_10px_rgba(255,215,0,0.5)]"
+                  className="object-contain drop-shadow-[0_0_10px_rgba(106,231,154,0.5)]"
                 />
               </div>
             ) : (

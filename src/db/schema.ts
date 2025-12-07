@@ -14,7 +14,9 @@ export const votes = pgTable('votes', {
   tier: text('tier').notNull(), // 'S', 'A', 'B', 'C', 'D', 'F'
   patch: text('patch').notNull().default('unknown'),
   sessionId: text('session_id').notNull(),
+  ipHash: text('ip_hash').notNull().default('legacy'), // Default for existing rows
   createdAt: timestamp('created_at').defaultNow(),
 }, (t) => ({
-  unq: unique().on(t.characterId, t.sessionId, t.patch),
+  // We switch uniqueness to rely on IP hash instead of session ID for stricter limits
+  unq: unique().on(t.characterId, t.ipHash, t.patch),
 }));

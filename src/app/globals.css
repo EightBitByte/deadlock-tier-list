@@ -4,8 +4,9 @@
   --background: #080808;
   --foreground: #ece8e3;
   --card-bg: #141412;
-  --accent-gold: #c8aa6e;
-  --accent-gold-glow: rgba(200, 170, 110, 0.3);
+  /* Ghostly Green Accent */
+  --accent-gold: #6AE79A;
+  --accent-gold-glow: rgba(106, 231, 154, 0.3);
 
   /* Tier Colors (More muted/metallic) */
   --tier-s: #ff6b6b;
