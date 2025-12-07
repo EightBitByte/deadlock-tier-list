@@ -14,6 +14,7 @@ interface Character {
   averageTier: string;
   totalVotes: number;
   userVote?: string | null;
+  nameImage?: string | null;
 }
 
 interface MetaData {

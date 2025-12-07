@@ -6,6 +6,7 @@ interface Character {
   name: string;
   slug: string;
   imageUrl: string;
+  nameImage?: string | null;
   averageTier: string;
   totalVotes: number;
   userVote?: string | null;

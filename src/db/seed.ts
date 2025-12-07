@@ -24,6 +24,7 @@ async function seed() {
       name: h.name,
       slug: h.name.toLowerCase().replace(/ /g, '-').replace(/[^a-z0-9-]/g, ''),
       imageUrl: h.images.icon_hero_card_webp || h.images.icon_hero_card || '',
+      nameImage: h.images.name_image || '',
     }));
 
     console.log(`Seeding ${mappedCharacters.length} characters...`);
@@ -41,7 +42,7 @@ async function seed() {
         .values(char)
         .onConflictDoUpdate({
           target: characters.name,
-          set: { imageUrl: char.imageUrl, slug: char.slug }
+          set: { imageUrl: char.imageUrl, slug: char.slug, nameImage: char.nameImage }
         });
     }
 

@@ -9,6 +9,7 @@ interface Character {
   id: number;
   name: string;
   imageUrl: string;
+  nameImage?: string | null;
   averageTier: string;
   userVote?: string | null;
 }
@@ -84,8 +85,24 @@ export const VoteModal: React.FC<VoteModalProps> = ({ character, isMuted = false
 
         <button className="absolute top-4 right-4 text-white/50 hover:text-white transition-colors" onClick={onClose}>✕</button>
 
-        <div className="flex flex-col items-center mb-8 relative z-10">
-          <h2 className="text-2xl font-bold mb-4 text-gold font-cinzel">Vote for {character.name}</h2>
+        <div className="flex flex-col items-center mb-8 relative z-10 w-full">
+          {/* Hero Name Image */}
+          <div className="relative h-16 w-full mb-4 flex items-center justify-center">
+            {/* Debug: {character.nameImage} */}
+            {character.nameImage ? (
+              <div className="relative w-48 h-full">
+                <Image
+                  src={character.nameImage}
+                  alt={character.name}
+                  fill
+                  unoptimized
+                  className="object-contain drop-shadow-[0_0_10px_rgba(255,215,0,0.5)]"
+                />
+              </div>
+            ) : (
+              <h2 className="text-2xl font-bold text-gold font-cinzel">Vote for {character.name}</h2>
+            )}
+          </div>
           <div className="w-32 h-32 rounded-lg overflow-hidden border-2 border-white/20 shadow-2xl relative">
             <Image
               src={character.imageUrl}

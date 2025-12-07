@@ -5,6 +5,7 @@ export const characters = pgTable('characters', {
   name: text('name').notNull().unique(),
   slug: text('slug').notNull(),
   imageUrl: text('image_url').notNull(),
+  nameImage: text('name_image'),
 });
 
 export const votes = pgTable('votes', {
