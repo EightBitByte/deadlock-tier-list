@@ -2,7 +2,7 @@
 
 Only the strongest survive the Cursed Apple. This is a community-driven tier list application for Valve's *Deadlock*, featuring real-time voting, patch versioning, and a high-fidelity dark aesthetic.
 
-![Deadlock Logo](https://assets-bucket.deadlock-api.com/assets-api-res/images/heroes/card_dashboard_logo.png)
+![Deadlock Logo](https://assets-bucket.deadlock-api.com/assets-api-res/icons/deadlock_logo_inner_unfilled.svg)
 
 ## Features
 
