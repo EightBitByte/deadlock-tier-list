@@ -1,8 +1,0 @@
-{
-  "/_global-error/page": "/_global-error",
-  "/_not-found/page": "/_not-found",
-  "/api/tierlist/route": "/api/tierlist",
-  "/api/vote/route": "/api/vote",
-  "/favicon.ico/route": "/favicon.ico",
-  "/page": "/"
-}

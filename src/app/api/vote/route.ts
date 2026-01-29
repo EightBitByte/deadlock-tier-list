@@ -17,7 +17,8 @@ export async function POST(request: Request) {
 
     // Extract IP address from headers
     const forwardedFor = request.headers.get('x-forwarded-for');
-    const ip = forwardedFor ? forwardedFor.split(',')[0] : '127.0.0.1';
+    const cfConnectingIp = request.headers.get('cf-connecting-ip');
+    const ip = cfConnectingIp || (forwardedFor ? forwardedFor.split(',')[0] : '127.0.0.1');
 
     // Hash the IP to protect user privacy
     const ipHash = createHash('sha256').update(ip + 'SALT_V1').digest('hex');
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
       })
       .onConflictDoUpdate({
         target: [votes.characterId, votes.ipHash, votes.patch],
-        set: { tier, createdAt: new Date() },
+        set: { tier, sessionId: sessionId || 'anonymous', createdAt: new Date() },
       });
 
     return NextResponse.json({ success: true, patch: latestPatch });
