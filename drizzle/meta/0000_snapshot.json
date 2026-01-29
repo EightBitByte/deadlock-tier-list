@@ -1,91 +1,129 @@
 {
-  "id": "b6d24366-3496-4d7d-acd2-d74f1d7b895b",
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "a2c50da1-3ead-4226-ba88-508ea621dd24",
   "prevId": "00000000-0000-0000-0000-000000000000",
-  "version": "7",
-  "dialect": "postgresql",
   "tables": {
-    "public.characters": {
+    "characters": {
       "name": "characters",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "integer",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": true
         },
         "name": {
           "name": "name",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "slug": {
           "name": "slug",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "image_url": {
           "name": "image_url",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name_image": {
+          "name": "name_image",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         }
       },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
+      "indexes": {
         "characters_name_unique": {
           "name": "characters_name_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "name"
-          ]
+          ],
+          "isUnique": true
         }
       },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     },
-    "public.votes": {
+    "votes": {
       "name": "votes",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "integer",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": true
         },
         "character_id": {
           "name": "character_id",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "tier": {
           "name": "tier",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
+        },
+        "patch": {
+          "name": "patch",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'unknown'"
         },
         "session_id": {
           "name": "session_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
+        },
+        "ip_hash": {
+          "name": "ip_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'legacy'"
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
+          "notNull": false,
+          "autoincrement": false,
+          "default": "'\"2026-01-29T04:41:34.926Z\"'"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "votes_character_id_ip_hash_patch_unique": {
+          "name": "votes_character_id_ip_hash_patch_unique",
+          "columns": [
+            "character_id",
+            "ip_hash",
+            "patch"
+          ],
+          "isUnique": true
+        }
+      },
       "foreignKeys": {
         "votes_character_id_characters_id_fk": {
           "name": "votes_character_id_characters_id_fk",
@@ -103,20 +141,17 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     }
   },
-  "enums": {},
-  "schemas": {},
-  "sequences": {},
-  "roles": {},
-  "policies": {},
   "views": {},
+  "enums": {},
   "_meta": {
-    "columns": {},
     "schemas": {},
-    "tables": {}
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {}
   }
 }

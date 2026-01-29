@@ -23,7 +23,8 @@ export async function POST(request: Request) {
     const ipHash = createHash('sha256').update(ip + 'SALT_V1').digest('hex');
 
     // Upsert vote for this IP Hash + character + patch
-    await db.insert(votes)
+    const database = await db();
+    await database.insert(votes)
       .values({
         characterId,
         tier,

@@ -1,15 +1,10 @@
 import * as dotenv from "dotenv";
 import { exit } from 'process';
+import * as fs from 'fs';
 
 dotenv.config({ path: ".env.local" });
 
-// Fetched dynamically
-const characterData: any[] = [];
-
 async function seed() {
-  const { db } = await import('./index');
-  const { characters } = await import('./schema');
-
   console.log('Fetching characters from API...');
   try {
     const response = await fetch('https://assets.deadlock-api.com/v2/heroes');
@@ -21,47 +16,35 @@ async function seed() {
     const validHeroes = heroes.filter((h: any) => h.player_selectable === true && h.disabled !== true);
 
     const mappedCharacters = validHeroes.map((h: any) => ({
-      name: h.name,
+      name: h.name.replace(/'/g, "''"), // Escape single quotes for SQL
       slug: h.name.toLowerCase().replace(/ /g, '-').replace(/[^a-z0-9-]/g, ''),
       imageUrl: h.images.icon_hero_card_webp || h.images.icon_hero_card || '',
       nameImage: h.images.name_image || '',
     }));
 
-    console.log(`Seeding ${mappedCharacters.length} characters...`);
+    console.log(`Generating SQL for ${mappedCharacters.length} characters...`);
 
-    // We want to update existing characters if they exist to get the new images, 
-    // or insert new ones. onConflictDoUpdate would be better than DoNothing.
-    // Drizzle support for onConflictDoUpdate:
-    // .onConflictDoUpdate({ target: characters.name, set: { imageUrl: sql`excluded.image_url` } })
+    let sql = '';
 
-    // Since we defined `name` as unique in schema, we can use that.
-
-    // Insert or Update valid characters
     for (const char of mappedCharacters) {
-      await db.insert(characters)
-        .values(char)
-        .onConflictDoUpdate({
-          target: characters.name,
-          set: { imageUrl: char.imageUrl, slug: char.slug, nameImage: char.nameImage }
-        });
+      // D1/SQLite upsert syntax
+      sql += `INSERT INTO characters (name, slug, image_url, name_image) VALUES ('${char.name}', '${char.slug}', '${char.imageUrl}', '${char.nameImage}') ON CONFLICT(name) DO UPDATE SET slug=excluded.slug, image_url=excluded.image_url, name_image=excluded.name_image;\n`;
     }
 
-    // Remove characters that are no longer in the valid list (e.g. they were disabled)
-    // We need 'inArray' and 'notInArray' from drizzle-orm
-    const { inArray, notInArray } = await import('drizzle-orm');
-    const validNames = mappedCharacters.map((c: any) => c.name);
-
+    // Clean up invalid characters
+    const validNames = mappedCharacters.map((c: any) => `'${c.name}'`).join(', ');
     if (validNames.length > 0) {
-      await db.delete(characters)
-        .where(notInArray(characters.name, validNames));
+      sql += `DELETE FROM characters WHERE name NOT IN (${validNames});\n`;
     }
+
+    fs.writeFileSync('seed.sql', sql);
+    console.log('Generated seed.sql');
 
   } catch (e) {
     console.error("Error fetching/seeding:", e);
     exit(1);
   }
 
-  console.log('Seeding complete!');
   exit(0);
 }
 

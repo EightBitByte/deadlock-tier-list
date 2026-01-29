@@ -1,6 +1,6 @@
 import { db } from '../db';
 import { characters, votes } from '../db/schema';
-import { sql } from 'drizzle-orm';
+import { sql, eq, and } from 'drizzle-orm';
 import { getPatches } from './patches';
 
 const TIER_VALUES: Record<string, number> = {
@@ -19,15 +19,20 @@ export async function getTierListData(patch?: string | null, sessionId?: string 
   // Determine which patch to view: requested -> latest -> 'unknown'
   const targetPatch = patch || latestPatch;
 
-  const allCharacters = await db.select().from(characters);
+  const database = await db();
+
+  const allCharacters = await database.select().from(characters);
 
   // Filter votes by the target patch
-  const voteCounts = await db.execute(sql`
-    SELECT ${votes.characterId} as character_id, ${votes.tier} as tier, count(*) as count
-    FROM ${votes}
-    WHERE ${votes.patch} = ${targetPatch}
-    GROUP BY ${votes.characterId}, ${votes.tier}
-  `);
+  const voteCounts = await database
+    .select({
+      character_id: votes.characterId,
+      tier: votes.tier,
+      count: sql<number>`count(*)`,
+    })
+    .from(votes)
+    .where(eq(votes.patch, targetPatch))
+    .groupBy(votes.characterId, votes.tier);
 
   const charStats: Record<number, { totalScore: number; totalVotes: number }> = {};
 
@@ -50,11 +55,13 @@ export async function getTierListData(patch?: string | null, sessionId?: string 
   const userVotesMap: Record<number, string> = {};
 
   if (sessionId) {
-    const userVotes = await db.execute(sql`
-      SELECT ${votes.characterId} as character_id, ${votes.tier} as tier
-      FROM ${votes}
-      WHERE ${votes.sessionId} = ${sessionId} AND ${votes.patch} = ${targetPatch}
-    `);
+    const userVotes = await database
+      .select({
+        character_id: votes.characterId,
+        tier: votes.tier,
+      })
+      .from(votes)
+      .where(and(eq(votes.sessionId, sessionId), eq(votes.patch, targetPatch)));
 
     for (const row of userVotes) {
       userVotesMap[row.character_id as number] = row.tier as string;

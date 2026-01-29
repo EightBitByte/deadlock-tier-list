@@ -1,0 +1,50 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"main": ".open-next/worker.js",
+	"name": "deadlock-tier-list",
+	"compatibility_date": "2026-01-28",
+	"compatibility_flags": [
+		// Enable Node.js API
+		// see https://developers.cloudflare.com/workers/configuration/compatibility-flags/#nodejs-compatibility-flag
+		"nodejs_compat",
+		// Allow to fetch URLs in your app
+		// see https://developers.cloudflare.com/workers/configuration/compatibility-flags/#global-fetch-strictly-public
+		"global_fetch_strictly_public"
+	],
+	"assets": {
+		"directory": ".open-next/assets",
+		"binding": "ASSETS"
+	},
+	"services": [
+		{
+			"binding": "WORKER_SELF_REFERENCE",
+			// The service should match the "name" of your worker
+			"service": "deadlock-tier-list"
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "NEXT_INC_CACHE_R2_BUCKET",
+			"bucket_name": "deadlock-tier-list-inc-cache"
+		}
+	],
+	"d1_databases": [
+		{
+			"binding": "deadlock_tier_list_db",
+			"database_name": "deadlock-tier-list-db",
+			"database_id": "58eb38c8-9a20-4669-a538-7d7eda993c1b",
+			"migrations_dir": "drizzle"
+		}
+	],
+	"images": {
+		// Enable image optimization
+		// see https://opennext.js.org/cloudflare/howtos/image
+		"binding": "IMAGES_BUCKET"
+	},
+	"routes": [
+		{
+			"pattern": "deadlock.jacobmoy.com",
+			"custom_domain": true
+		}
+	]
+}
